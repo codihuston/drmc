@@ -1,0 +1,38 @@
+#!/bin/bash
+
+PATTERN="$1"
+CONTAINERS=$(docker ps --format '{{.Names}}')
+
+if [ -z "$PATTERN" ]; then
+    echo "ERROR: A pattern must be specified as the first argument."
+    exit 1
+fi
+
+TO_REMOVE=()
+for LINE in $CONTAINERS
+do
+    if [ "$PATTERN" = "-a" ] || [[ "$LINE" =~ $PATTERN ]]; then
+        TO_REMOVE+=("$LINE")
+    fi
+done
+
+if [ "${#TO_REMOVE[@]}" -eq 0 ]; then
+    echo "No containers found matching pattern '$PATTERN'"
+    exit 0
+fi
+
+echo "Do you want to remove the following containers? (y/n)"
+for LINE in "${TO_REMOVE[@]}"
+do
+    echo "$LINE"
+done
+echo -n "(y/n) > "
+read answer
+
+if [ "$answer" != "${answer#[Yy]}" ] ;then 
+    for LINE in "${TO_REMOVE[@]}"
+    do
+        docker rm -f "$LINE"
+    done
+fi
+
